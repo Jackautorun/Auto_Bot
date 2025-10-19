@@ -1,0 +1,13 @@
+{
+  "name": "auto_bot",
+  "version": "0.0.0",
+  "description": "Automation preset with promptfoo configuration for Auto Bot.",
+  "private": true,
+  "license": "MIT",
+  "scripts": {
+    "test": "promptfoo eval"
+  },
+  "devDependencies": {
+    "promptfoo": "^0.4.0"
+  }
+}
