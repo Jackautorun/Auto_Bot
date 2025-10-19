@@ -1,0 +1,11 @@
+providers:
+  - id: openai:gpt-4o-mini
+    config: { apiKey: ${OPENAI_API_KEY} }
+tests:
+  - vars:
+      input: "สรุปหัวข้อประชุม 5 บรรทัด"
+    assert:
+      - type: contains
+        value: "สรุป"
+prompts:
+  - "สรุป: {{input}}"
