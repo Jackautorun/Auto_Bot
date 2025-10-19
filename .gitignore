@@ -12,6 +12,11 @@ build/
 .vercel/
 .cache/
 
+# Python
+.venv/
+__pycache__/
+*.pyc
+
 # Env
 .env
 .env.*
