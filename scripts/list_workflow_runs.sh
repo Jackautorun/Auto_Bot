@@ -7,6 +7,12 @@ set -euo pipefail
 : "${OWNER:?Environment variable OWNER must be set to the repository owner}"
 : "${REPO:?Environment variable REPO must be set to the repository name}"
 
+if ! command -v jq >/dev/null 2>&1; then
+  echo "Error: jq is required but was not found in PATH." >&2
+  echo "Install jq (https://stedolan.github.io/jq/) and try again." >&2
+  exit 127
+fi
+
 PER_PAGE=${1:-10}
 
 curl -sS -H "$AUTH" -H "$ACCEPT" \
