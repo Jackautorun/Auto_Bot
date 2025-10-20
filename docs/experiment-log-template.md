@@ -37,7 +37,7 @@
     - Observation: 
 
 ## Statistical Controls
-- **Multiple testing control**: (เช่น Holm-Bonferroni, Benjamini-Hochberg สำหรับ FDR)
+- **Multiple testing control**: (เช่น Holm-Bonferroni, Benjamini-Hochberg สำหรับ False Discovery Rate (FDR))
 - **Notes**: วิธีการคำนวณ, adjustments, assumptions
 
 ## Outcome & Ownership
