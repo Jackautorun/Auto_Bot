@@ -10,6 +10,11 @@
 2) เปิด Secret scanning + Push protection
 3) เพิ่ม `OPENAI_API_KEY` หากใช้ LLM eval
 
+การบันทึกผลรัน
+- ใช้ `python scripts/run_log_template.py` เพื่อสร้างเทมเพลตบันทึกผลรันตามข้อกำหนด OEC/Guardrails
+- ระบุอาร์กิวเมนต์ที่ทราบ เช่น `--feature`, `--repo`, `--oec-name` เพื่อเติมข้อมูลอัตโนมัติ หรือปล่อยค่าเริ่มต้นไว้เพื่อเติมภายหลัง
+- ใช้ `--output path/to/file.md` หากต้องการบันทึกเทมเพลตลงไฟล์โดยตรง
+
 สคริปต์เพิ่มเติม
 - `scripts/list_workflow_runs.sh` เรียก GitHub Actions API เพื่อตรวจสอบสถานะ workflow ล่าสุด (ต้องตั้งค่า `AUTH`, `ACCEPT`, `BASE`, `OWNER`, `REPO` ในสภาพแวดล้อมก่อนรัน และสามารถระบุจำนวนรายการที่ต้องการด้วยอาร์กิวเมนต์แรก ค่าเริ่มต้นคือ 10)
 
