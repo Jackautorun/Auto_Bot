@@ -7,11 +7,23 @@ set -euo pipefail
 : "${OWNER:?Environment variable OWNER must be set to the repository owner}"
 : "${REPO:?Environment variable REPO must be set to the repository name}"
 
-if ! command -v jq >/dev/null 2>&1; then
-  echo "Error: jq is required but was not found in PATH." >&2
-  echo "Install jq (https://stedolan.github.io/jq/) and try again." >&2
-  exit 127
-fi
+require_command() {
+  local binary=$1
+  shift
+
+  if ! command -v "$binary" >/dev/null 2>&1; then
+    echo "Error: $binary is required but was not found in PATH." >&2
+    if [ "$#" -gt 0 ]; then
+      printf '%s\n' "$@" >&2
+    fi
+    exit 127
+  fi
+}
+
+require_command curl \
+  "Install curl from https://curl.se/ or your package manager and try again."
+require_command jq \
+  "Install jq from https://jqlang.github.io/jq/ or your package manager and try again."
 
 PER_PAGE=${1:-10}
 
