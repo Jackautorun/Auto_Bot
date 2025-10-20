@@ -25,7 +25,7 @@
 | error_rate |  |  |  |  |  |
 | fairness_segment… |  |  |  |  |  |
 
-> หากมี guardrail เพิ่มเติมให้ขยายตารางหรือเพิ่มตารางใหม่
+> หากมี guardrails เพิ่มเติมให้ขยายตารางหรือเพิ่มตารางใหม่
 
 ## Segment Analysis
 - **Segments**: `{device, country, cohort, ...}`
