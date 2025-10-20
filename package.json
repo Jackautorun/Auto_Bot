@@ -5,7 +5,6 @@
   "description": "Automation workflows and tooling for the Auto_Bot repository",
   "license": "MIT",
   "scripts": {
-    "preeval": "node -e \"require('fs').mkdirSync('reports/latest', { recursive: true })\"",
-    "eval": "npx promptfoo eval promptfooconfig.yaml --report ./reports/latest"
+    "eval": "node -e \"require('fs').mkdirSync('reports/latest', { recursive: true })\" && npx promptfoo eval promptfooconfig.yaml --report ./reports/latest"
   }
 }
