@@ -10,4 +10,7 @@
 2) เปิด Secret scanning + Push protection
 3) เพิ่ม `OPENAI_API_KEY` หากใช้ LLM eval
 
+สคริปต์เพิ่มเติม
+- `scripts/list_workflow_runs.sh` เรียก GitHub Actions API เพื่อตรวจสอบสถานะ workflow ล่าสุด (ต้องตั้งค่า `AUTH`, `ACCEPT`, `BASE`, `OWNER`, `REPO` ในสภาพแวดล้อมก่อนรัน และสามารถระบุจำนวนรายการที่ต้องการด้วยอาร์กิวเมนต์แรก ค่าเริ่มต้นคือ 10)
+
 อัปเดต: 2025-10-19Z
