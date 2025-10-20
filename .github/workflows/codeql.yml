@@ -21,7 +21,6 @@ jobs:
       actions: read
       contents: read
       security-events: write
-      statuses: write
 
     strategy:
       fail-fast: false
@@ -49,15 +48,26 @@ jobs:
         category: "security"
       continue-on-error: true
 
-    - name: Publish commit status
-      if: always()
+    - name: Fail if CodeQL analysis failed
+      if: ${{ steps.autobuild.outcome != 'success' || steps.analyze.outcome != 'success' }}
+      run: exit 1
+
+  publish-status:
+    name: Publish CodeQL status
+    runs-on: ubuntu-latest
+    needs: analyze
+    if: always()
+    permissions:
+      contents: read
+      statuses: write
+    steps:
+    - name: Publish aggregated commit status
       uses: actions/github-script@v7
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         script: |
-          const autobuildOutcome = '${{ steps.autobuild.outcome }}';
-          const analyzeOutcome = '${{ steps.analyze.outcome }}';
-          const success = autobuildOutcome === 'success' && analyzeOutcome === 'success';
+          const result = '${{ needs.analyze.result }}';
+          const success = result === 'success';
           const state = success ? 'success' : 'failure';
           const description = success ? 'CodeQL analysis passed' : 'CodeQL analysis failed';
           const sha = context.payload.pull_request?.head.sha ?? context.sha;
