@@ -3,5 +3,8 @@
   "version": "0.0.0",
   "private": true,
   "description": "Automation workflows and tooling for the Auto_Bot repository",
-  "license": "MIT"
+  "license": "MIT",
+  "scripts": {
+    "eval": "npx promptfoo eval promptfooconfig.yaml --report ./reports/latest"
+  }
 }
