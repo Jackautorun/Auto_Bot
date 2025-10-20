@@ -1,0 +1,80 @@
+name: llm-eval
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    - cron: '0 3 * * 1'
+
+permissions:
+  contents: read
+
+jobs:
+  llm-eval:
+    name: llm-eval
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      statuses: write
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Determine evaluation mode
+        id: eval_mode
+        run: |
+          if [ -z "$OPENAI_API_KEY" ]; then
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "OPENAI_API_KEY not provided; skipping Promptfoo evaluation." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set up Node.js
+        if: steps.eval_mode.outputs.enabled == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install promptfoo
+        if: steps.eval_mode.outputs.enabled == 'true'
+        run: npm install -g promptfoo
+
+      - name: Run Promptfoo evaluation
+        id: eval
+        if: steps.eval_mode.outputs.enabled == 'true'
+        continue-on-error: true
+        run: |
+          promptfoo eval --config promptfooconfig.yaml --max-concurrency 2
+
+      - name: Publish commit status
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const enabled = '${{ steps.eval_mode.outputs.enabled }}' === 'true';
+            const outcome = '${{ steps.eval.outcome }}';
+            let state = 'success';
+            let description = 'Promptfoo evaluation skipped';
+            if (enabled) {
+              state = outcome === 'success' ? 'success' : 'failure';
+              description = state === 'success' ? 'Promptfoo evaluation passed' : 'Promptfoo evaluation failed';
+            }
+            const sha = context.payload.pull_request?.head.sha ?? context.sha;
+            await github.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha,
+              state,
+              context: 'llm-eval',
+              description,
+              target_url: `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+            });
+            if (state === 'failure') {
+              core.setFailed(description);
+            }

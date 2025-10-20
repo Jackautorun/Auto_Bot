@@ -17,6 +17,11 @@ jobs:
   analyze:
     name: Analyze
     runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+      statuses: write
 
     strategy:
       fail-fast: false
@@ -33,9 +38,38 @@ jobs:
         languages: ${{ matrix.language }}
 
     - name: Autobuild
+      id: autobuild
       uses: github/codeql-action/autobuild@v3
+      continue-on-error: true
 
     - name: Perform CodeQL Analysis
+      id: analyze
       uses: github/codeql-action/analyze@v3
       with:
         category: "security"
+      continue-on-error: true
+
+    - name: Publish commit status
+      if: always()
+      uses: actions/github-script@v7
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        script: |
+          const autobuildOutcome = '${{ steps.autobuild.outcome }}';
+          const analyzeOutcome = '${{ steps.analyze.outcome }}';
+          const success = autobuildOutcome === 'success' && analyzeOutcome === 'success';
+          const state = success ? 'success' : 'failure';
+          const description = success ? 'CodeQL analysis passed' : 'CodeQL analysis failed';
+          const sha = context.payload.pull_request?.head.sha ?? context.sha;
+          await github.repos.createCommitStatus({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            sha,
+            state,
+            context: 'codeql',
+            description,
+            target_url: `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+          });
+          if (!success) {
+            core.setFailed(description);
+          }
