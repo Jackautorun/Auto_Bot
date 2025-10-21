@@ -42,7 +42,8 @@ jobs:
 
       - name: Resolve base branch
         id: base
-        env: { GH_TOKEN: ${{ secrets.GITHUB_TOKEN }} }
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           BASE="${{ inputs.base }}"
           if [ -z "$BASE" ]; then
@@ -92,7 +93,7 @@ jobs:
           base: ${{ steps.base.outputs.base }}
           commit-message: "chore: apply patch"
           title: ${{ inputs.title || 'Apply patch via command' }}
-          body:  ${{ inputs.body  || format('Requested by @{0}. Source: {1}', github.actor, github.event_name) }}
+          body: "${{ inputs.body || format('Requested by @{0}. Source {1}', github.actor, github.event_name) }}"
 
       - name: PR link
         run: echo "PR #${{ steps.cpr.outputs.pull-request-number }} -> ${{ steps.cpr.outputs.pull-request-url }}"
