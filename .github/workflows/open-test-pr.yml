@@ -1,0 +1,50 @@
+name: Open test PR
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: "Test branch name"
+        required: false
+        default: "chore/test-automerge"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  open-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure git user
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Create commit on new branch
+        id: commit
+        run: |
+          set -euo pipefail
+          BRANCH="${{ github.event.inputs.branch }}"
+          git checkout -b "$BRANCH"
+          TS=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          echo "auto test run $TS" >> .automerge-test.txt
+          git add .automerge-test.txt
+          git commit -m "chore(test): automerge smoke $TS"
+          git push origin "$BRANCH"
+          echo "branch=$BRANCH" >> $GITHUB_OUTPUT
+
+      - name: Open pull request
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          title: "chore(test): automerge smoke"
+          body: |
+            This is a smoke test PR created by workflow to verify auto-approve-and-merge.
+          branch: ${{ steps.commit.outputs.branch }}
+          base: main
+          draft: false
+          labels: auto-merge

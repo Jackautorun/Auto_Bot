@@ -1,0 +1,81 @@
+name: Auto-approve (guarded) and auto-merge PRs
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review, labeled]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  automerge:
+    if: ${{ !github.event.pull_request.draft && github.event.pull_request.base.ref == 'main' && github.event.pull_request.head.repo.full_name == github.repository && contains(fromJson('["OWNER","MEMBER","COLLABORATOR"]'), github.event.pull_request.author_association) }}
+    runs-on: ubuntu-latest
+    concurrency:
+      group: automerge-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
+    env:
+      AUTO_APPROVE_TOKEN: ${{ secrets.AUTO_APPROVE_TOKEN }}
+    steps:
+      - name: Require label: auto-merge
+        uses: mheap/github-action-required-labels@v5
+        with:
+          mode: minimum
+          count: 1
+          labels: 'auto-merge'
+          add_comment: true
+
+      - name: Check sensitive file changes
+        id: changes
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            sensitive:
+              - '.github/**'
+              - '.releaserc.json'
+              - 'package.json'
+              - 'requirements*.txt'
+              - 'Dockerfile*'
+              - 'docker/**'
+
+      - name: Explain skip (sensitive changes)
+        if: ${{ steps.changes.outputs.sensitive == 'true' }}
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            Skipping auto-merge: sensitive files changed. A maintainer review is required.
+
+      - name: Auto approve PR (PAT)
+        if: ${{ env.AUTO_APPROVE_TOKEN != '' && steps.changes.outputs.sensitive != 'true' }}
+        uses: peter-evans/approve-pull-request@v6
+        with:
+          token: ${{ secrets.AUTO_APPROVE_TOKEN }}
+          pull-request-number: ${{ github.event.pull_request.number }}
+
+      - name: Auto approve PR (fallback)
+        if: ${{ env.AUTO_APPROVE_TOKEN == '' && steps.changes.outputs.sensitive != 'true' }}
+        uses: peter-evans/approve-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          pull-request-number: ${{ github.event.pull_request.number }}
+
+      - name: Enable auto-merge (squash)
+        if: ${{ steps.changes.outputs.sensitive != 'true' }}
+        uses: peter-evans/enable-pull-request-automerge@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          pull-request-number: ${{ github.event.pull_request.number }}
+          merge-method: squash
+
+      - name: Merge PR now (squash + delete branch)
+        if: ${{ steps.changes.outputs.sensitive != 'true' }}
+        uses: peter-evans/merge-pull-request@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          pull-request-number: ${{ github.event.pull_request.number }}
+          merge-method: squash
+          delete-branch: true
