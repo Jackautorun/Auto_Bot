@@ -1,0 +1,98 @@
+name: apply-patch
+
+on:
+  issue_comment:
+    types: [created]          # คอมเมนต์ใน PR ที่มีคำสั่ง /apply-patch + โค้ดแพตช์
+  workflow_dispatch:          # รันเอง พร้อมส่ง input เป็นแพตช์
+    inputs:
+      patch:
+        description: "unified diff/patch content"
+        required: true
+      base:
+        description: "base branch"
+        required: false
+        default: "main"
+      title:
+        description: "PR title"
+        required: false
+        default: "Apply patch via command"
+      body:
+        description: "PR body"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  run:
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'issue_comment' &&
+       contains(github.event.comment.body, '/apply-patch') &&
+       (github.event.comment.author_association == 'OWNER' ||
+        github.event.comment.author_association == 'MEMBER' ||
+        github.event.comment.author_association == 'COLLABORATOR'))
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+
+      - name: Resolve base branch
+        id: base
+        env: { GH_TOKEN: ${{ secrets.GITHUB_TOKEN }} }
+        run: |
+          BASE="${{ inputs.base }}"
+          if [ -z "$BASE" ]; then
+            if [ -n "${{ github.event.issue.number }}" ] && [ -n "${{ github.event.issue.pull_request.url }}" ]; then
+              PR="${{ github.event.issue.number }}"
+              BASE=$(gh pr view "$PR" -R "${{ github.repository }}" --json baseRefName -q .baseRefName)
+            else
+              BASE="main"
+            fi
+          fi
+          echo "base=$BASE" >> "$GITHUB_OUTPUT"
+
+      - name: Extract patch
+        id: patch
+        shell: bash
+        run: |
+          set -e
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            printf "%s\n" "${{ inputs.patch }}" > changes.patch
+          else
+            printf "%s\n" "${{ github.event.comment.body }}" > comment.txt
+            awk '/```(patch|diff)/{f=1;next} /```/{if(f){exit}} f{print}' comment.txt > changes.patch
+          fi
+          [ -s changes.patch ] || { echo "No patch found"; exit 1; }
+          echo "file=changes.patch" >> "$GITHUB_OUTPUT"
+
+      - name: Create branch
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout "${{ steps.base.outputs.base }}"
+          git checkout -b "auto/patch-${{ github.run_id }}"
+
+      - name: Apply patch
+        run: |
+          set -e
+          git apply --index --reject --whitespace=nowarn "${{ steps.patch.outputs.file }}" \
+            || (echo "git apply failed, try GNU patch"; patch -p0 < "${{ steps.patch.outputs.file }}")
+          git add -A
+          git commit -m "chore: apply patch from ${{ github.event_name }} by @${{ github.actor }}"
+
+      - name: Open PR
+        id: cpr
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: "auto/patch-${{ github.run_id }}"
+          base: ${{ steps.base.outputs.base }}
+          commit-message: "chore: apply patch"
+          title: ${{ inputs.title || 'Apply patch via command' }}
+          body:  ${{ inputs.body  || format('Requested by @{0}. Source: {1}', github.actor, github.event_name) }}
+
+      - name: PR link
+        run: echo "PR #${{ steps.cpr.outputs.pull-request-number }} -> ${{ steps.cpr.outputs.pull-request-url }}"
