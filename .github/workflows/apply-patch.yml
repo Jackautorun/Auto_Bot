@@ -42,7 +42,7 @@ jobs:
 
       - name: Resolve base branch
         id: base
-        env: { GH_TOKEN: ${{ secrets.GITHUB_TOKEN.env}}
+        env: { GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}}
         
         run: |
           BASE="${{ inputs.base }}"
