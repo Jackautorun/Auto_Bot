@@ -3,5 +3,9 @@
   "version": "0.0.0",
   "private": true,
   "description": "Automation workflows and tooling for the Auto_Bot repository",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "dotenv-cli": "^10.0.0",
+    "promptfoo": "^0.118.17"
+  }
 }

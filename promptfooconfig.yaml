@@ -1,9 +1,54 @@
 providers:
   - id: openai:gpt-4o-mini
     config:
-      apiKey: "${OPENAI_API_KEY}"
-tests:
-  - vars: { input: "สรุปหัวข้อประชุม 5 บรรทัด" }
-    assert: [{ type: contains, value: "สรุป" }]
+      model: gpt-4o-mini
+      temperature: 0
+
 prompts:
-  - "สรุป: {{input}}"
+  - id: hello-prompt
+    label: Hello prompt
+    raw: |
+      {{#system}}Always reply with exactly the single word Hello (no extra spaces or punctuation).{{/system}}
+      {{#user}}
+      Hello
+      {{/user}}
+
+  - id: hello-prompt-th
+    label: Thai hello prompt
+    raw: |
+      {{#system}}Always reply with exactly the single word Hello (no extra spaces or punctuation).{{/system}}
+      {{#user}}
+      สวัสดี
+      {{/user}}
+
+  - id: hello-followup-prompt
+    label: Follow-up prompt
+    raw: |
+      {{#system}}Always reply with exactly the single word Hello (no extra spaces or punctuation).{{/system}}
+      {{#user}}
+      Are you there?
+      {{/user}}
+
+tests:
+  - id: hello-test
+    description: ควรตอบ Hello
+    prompt: hello-prompt
+    assert:
+      - type: contains
+        value: Hello
+
+  - id: hello-thai-test
+    description: ไม่ว่าจะถามภาษาไทยก็ควรตอบ Hello
+    prompt: hello-prompt-th
+    assert:
+      - type: contains
+        value: Hello
+
+  - id: hello-followup-test
+    description: ควรตอบ Hello ในบทสนทนาทั่วไป
+    prompt: hello-followup-prompt
+    assert:
+      - type: contains
+        value: Hello
+
+npx promptfoo test

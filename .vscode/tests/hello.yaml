@@ -1,0 +1,8 @@
+id: hello-test
+description: โมเดลต้องตอบ “Hello” เมื่อเราให้ “Hello”
+prompt:
+  template: |
+    Hello
+  actor: user
+expected:
+  content: Hello

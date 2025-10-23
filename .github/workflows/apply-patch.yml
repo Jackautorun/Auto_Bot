@@ -42,7 +42,8 @@ jobs:
 
       - name: Resolve base branch
         id: base
-        env: { GH_TOKEN: ${{ secrets.GITHUB_TOKEN }} }
+        env: { GH_TOKEN: ${{ secrets.GITHUB_TOKEN.env}}
+        
         run: |
           BASE="${{ inputs.base }}"
           if [ -z "$BASE" ]; then
