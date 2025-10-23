@@ -50,5 +50,3 @@ tests:
     assert:
       - type: contains
         value: Hello
-
-npx promptfoo test
